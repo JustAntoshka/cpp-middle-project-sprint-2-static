@@ -35,8 +35,16 @@ fixed_string(const char (&)[N]) -> fixed_string<N>;
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
 
-// ваш код здесь
-struct parse_error {};
+template <size_t Len>
+struct parse_error : fixed_string<Len> {
+
+    constexpr parse_error(const char (&str)[Len])
+    : fixed_string<Len>(str)
+    {}
+};
+
+template <size_t N>
+parse_error(const char(&)[N]) -> parse_error<N>;
 
 // Шаблонный класс для хранения результатов парсинга
 
