@@ -6,33 +6,32 @@ namespace stdx::details {
 
 // Шаблонный класс, хранящий C-style строку фиксированной длины
 
-template <size_t Len = 0>
+template <size_t Len>
 struct fixed_string {
 public:
-    constexpr fixed_string(const char (&str)[Len + 1]) {
-        size_t i = 0;
-        for(; i < Len; ++i) {
+    constexpr fixed_string(const char (&str)[Len]) {
+        for(size_t i = 0; i < Len; ++i) {
             _string[i] = str[i];
         }
-        _string[i] = '\0';
     }
     
     template <size_t Len2>
     constexpr fixed_string(const char (&str)[Len2]) {
         static_assert(Len2 < Len, "Given string is too long");
-        size_t i = 0;
-        for(; i < Len2; ++i) {
+        for(size_t i = 0; i < Len2; ++i) {
             _string[i] = str[i];
         }
-        _string[i] = '\0';
     }
 
     template <typename It>
     constexpr fixed_string(It begin, It end);
 
 private:
-    char _string[Len + 1] = {};
+    char _string[Len] = {};
 };
+
+template <size_t N>
+fixed_string(const char (&)[N]) -> fixed_string<N>;
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
 
