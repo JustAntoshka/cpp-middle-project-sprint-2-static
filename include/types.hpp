@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <tuple>
 
 namespace stdx::details {
 
@@ -50,9 +51,11 @@ parse_error(const char(&)[N]) -> parse_error<N>;
 
 template <typename... Ts>
 struct scan_result {
-// ваш код здесь
-// измените реализацию
-    int i;
+    std::tuple<Ts...> v;
+
+    std::tuple<Ts...> values() {
+        return v;
+    }
 };
 
 } // namespace stdx::details
