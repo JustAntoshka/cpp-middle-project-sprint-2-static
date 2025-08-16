@@ -7,45 +7,37 @@ namespace stdx::details {
 
 // Шаблонный класс, хранящий C-style строку фиксированной длины
 
-template <size_t Len>
+template <size_t Size>
 struct fixed_string {
-public:
-    constexpr fixed_string(const char (&str)[Len]) {
-        for(size_t i = 0; i < Len; ++i) {
-            _string[i] = str[i];
+    constexpr fixed_string(const char (&str)[Size]) {
+        for(size_t i = 0; i < Size; ++i) {
+            data[i] = str[i];
         }
     }
     
-    template <size_t Len2>
-    constexpr fixed_string(const char (&str)[Len2]) {
-        static_assert(Len2 < Len, "Given string is too long");
-        for(size_t i = 0; i < Len2; ++i) {
-            _string[i] = str[i];
+    template <size_t Size2>
+    constexpr fixed_string(const char (&str)[Size2]) {
+        static_assert(Size2 < Size, "Given string is too long");
+        for(size_t i = 0; i < Size2; ++i) {
+            data[i] = str[i];
         }
     }
 
     template <typename It>
     constexpr fixed_string(It begin, It end);
 
-private:
-    char _string[Len] = {};
+    constexpr size_t size() const {
+        return Size;
+    }
+
+    char data[Size] = {};
 };
 
-template <size_t N>
-fixed_string(const char (&)[N]) -> fixed_string<N>;
+template <size_t Size>
+fixed_string(const char (&)[Size]) -> fixed_string<Size>;
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
-
-template <size_t Len>
-struct parse_error : fixed_string<Len> {
-
-    constexpr parse_error(const char (&str)[Len])
-    : fixed_string<Len>(str)
-    {}
-};
-
-template <size_t N>
-parse_error(const char(&)[N]) -> parse_error<N>;
+struct parse_error : fixed_string<100> {};
 
 // Шаблонный класс для хранения результатов парсинга
 
