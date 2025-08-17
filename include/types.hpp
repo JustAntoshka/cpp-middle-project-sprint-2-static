@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <algorithm>
 #include <tuple>
 
 namespace stdx::details {
@@ -10,17 +11,13 @@ namespace stdx::details {
 template <size_t Size>
 struct fixed_string {
     constexpr fixed_string(const char (&str)[Size]) {
-        for(size_t i = 0; i < Size; ++i) {
-            data[i] = str[i];
-        }
+        std::copy_n(str, Size, data);
     }
     
     template <size_t Size2>
     constexpr fixed_string(const char (&str)[Size2]) {
         static_assert(Size2 < Size, "Given string is too long");
-        for(size_t i = 0; i < Size2; ++i) {
-            data[i] = str[i];
-        }
+        std::copy_n(str, Size2, data);
     }
 
     template <typename It>
