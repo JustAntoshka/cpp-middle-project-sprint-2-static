@@ -2,7 +2,9 @@
 
 #include <charconv>
 #include <concepts>
+#include <cstdint>
 #include <optional>
+#include <string_view>
 #include <system_error>
 
 #include "format_string.hpp"
@@ -63,14 +65,62 @@ consteval auto get_current_source_for_parsing() {
     return std::pair{src_start, src_end};
 }
 
+consteval bool is_digit(char c) {
+    return '0' <= c && c <= '9';
+}
 
-// Реализуйте семейство функция parse_value
+template <fixed_string Src>
+consteval bool is_number() {
+    static_assert(Src.size() > 1, "Invalid number format");
+
+    constexpr char begin = Src.data[0];
+    constexpr char end = Src.data[Src.size() - 1];
+    if constexpr (begin == '+' || begin == '-') {
+        return is_number<{Src.data + 1, Src.data + Src.size() - 2}>();
+    }
+    
+    for(size_t i = 0; i < Src.size(); ++i) {
+        if constexpr (!is_digit(Src.data[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Семейство функций parse_value
+template <fixed_string Src, fixed_string Spec, typename T>
+consteval T parse_value() {
+
+    static_assert(Spec.size() > 0, "Empty format specifier is not allowed");
+    static_assert(Spec.size() == 3, "Incorrect format specifier");
+    static_assert(Spec.data[0] == '%', "Incorrect format specifier");
+    static_assert(Spec.data[1] == 'd'
+               || Spec.data[1] == 'u'
+               || Spec.data[1] == 's', "Incorrect format specifier");
+
+    if constexpr (Spec.data[1] == 'd') {
+        // return parse_value(Src);
+        return 42;
+    }
+    if constexpr (Spec.data[1] == 'u') {
+        // return parse_value(Src);
+        return 3.14;
+    }
+}
 
 // Шаблонная функция, выполняющая преобразования исходных данных в конкретный тип на основе I-го плейсхолдера
+template <typename T, int I, format_string fmt, fixed_string source>
+consteval T parse_input() {
+    constexpr auto src_positions = get_current_source_for_parsing<I, fmt, source>();
+    constexpr auto fmt_positions = fmt.placeholder_positions;
 
-// здесь ваш код
-void parse_input() {  // поменяйте сигнатуру
-    // здесь ваш код
+    constexpr auto src_start = src_positions.first, src_end = src_positions.second;
+    constexpr auto spec_start = fmt_positions.first + 1, spec_end = fmt_positions.second;
+
+    constexpr fixed_string src{src_start, src_end};
+    constexpr fixed_string spec{spec_start, spec_end};
+
+    return parse_value(src, spec);
 }
 
 } // namespace stdx::details

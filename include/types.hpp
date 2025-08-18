@@ -18,10 +18,15 @@ struct fixed_string {
     constexpr fixed_string(const char (&str)[Size2]) {
         static_assert(Size2 < Size, "Given string is too long");
         std::copy_n(str, Size2, data);
+        data[Size2] = '\0';
     }
-
+    
     template <typename It>
-    constexpr fixed_string(It begin, It end);
+    constexpr fixed_string(It begin, It end) {
+        static_assert(std::distance(begin, end) < Size, "Given iterator range is too long");
+        std::copy(begin, end, data);
+        data[std::distance(begin, end)] = '\0';
+    }
 
     constexpr size_t size() const {
         return Size;
