@@ -11,8 +11,6 @@
 namespace stdx::details {
 
 // Шаблонная функция, возвращающая пару позиций в строке с исходными данными, соотвествующих I-ому плейсхолдеру
-// Функция закомментирована, так как еще не реализованы классы, которые она использует
-/*
 template<int I, format_string fmt, fixed_string source>
 consteval auto get_current_source_for_parsing() {
     static_assert(I >= 0 && I < fmt.number_placeholders, "Invalid placeholder index");
@@ -64,7 +62,7 @@ consteval auto get_current_source_for_parsing() {
     }();
     return std::pair{src_start, src_end};
 }
-*/
+
 
 // Реализуйте семейство функция parse_value
 
