@@ -77,6 +77,7 @@ class format_string {
 
     using placeholder_position = std::pair<size_t, size_t>;
 
+    // Функция для получения позиций плейсхолдеров
     template <size_t NPos = number_placeholders>
     static consteval std::array<placeholder_position, NPos> get_placeholder_positions() {
         std::array<placeholder_position, NPos> positions{};
@@ -96,22 +97,14 @@ class format_string {
     template <size_t NPos = number_placeholders>
     static constexpr std::array<placeholder_position, NPos> placeholder_positions = get_placeholder_positions();
 };
+    
+} // namespace stdx::details
 
 
 // Пользовательский литерал
-/*
-ваш код здесь
-ваш код здесь operator"" _fs()  сигнатуру также поменяйте
-{
-ваш код здесь
+// TODO: move to stdx::details
+// TODO: write this for format_string
+template<stdx::details::fixed_string S>
+constexpr auto operator""_fs() {
+    return S.data;
 }
-*/
-
-// Функция для получения позиций плейсхолдеров
-
-// ваш код здесь
-void get_placeholder_positions() {  // сигнатуру тоже нужно изменить
-    // ваш код здесь
-}
-
-} // namespace stdx::details
