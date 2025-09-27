@@ -7,9 +7,10 @@
 namespace stdx::details {
 
 // Шаблонный класс для хранения форматирующей строчки и ее особенностей
-template <fixed_string str>
+template <auto str>
 class format_string {
-    static constexpr auto value = str;
+public:
+    static constexpr auto fmt = str;
 
     // Функция для получения количества плейсхолдеров и проверки корректности формирующей строки
     static consteval std::expected<size_t, parse_error> get_number_placeholders() {
@@ -71,15 +72,15 @@ class format_string {
         return placeholder_count;
     }
 
-    static constexpr auto number_placeholders = get_number_placeholders();
+    static_assert(get_number_placeholders().has_value(), std::string_view(get_number_placeholders().error().data));
 
-    static_assert(number_placeholders.has_value(), "AAAAAAAAAAAAAAAAAAAAAA");
+    static constexpr auto number_placeholders = get_number_placeholders().value();
 
     using placeholder_position = std::pair<size_t, size_t>;
 
     // Функция для получения позиций плейсхолдеров
     template <size_t NPos = number_placeholders>
-    static consteval std::array<placeholder_position, NPos> get_placeholder_positions() {
+    static consteval auto get_placeholder_positions() {
         std::array<placeholder_position, NPos> positions{};
 
         auto pos = 0;
@@ -94,8 +95,7 @@ class format_string {
         return positions;
     }
 
-    template <size_t NPos = number_placeholders>
-    static constexpr std::array<placeholder_position, NPos> placeholder_positions = get_placeholder_positions();
+    static constexpr auto placeholder_positions = get_placeholder_positions();
 };
     
 } // namespace stdx::details

@@ -21,22 +21,18 @@ struct fixed_string {
         data[Size2] = '\0';
     }
     
-    template <typename It>
-    constexpr fixed_string(It begin, It end) {
-        static_assert(std::distance(begin, end) < Size, "Given iterator range is too long");
+    template<typename Ptr>
+    constexpr fixed_string(Ptr begin, Ptr end) {
         std::copy(begin, end, data);
-        data[std::distance(begin, end)] = '\0';
+        data[end - begin] = '\0';
     }
 
     constexpr size_t size() const {
         return Size;
     }
 
-    char data[Size] = {};
+    char data[Size];
 };
-
-template <size_t Size>
-fixed_string(const char (&)[Size]) -> fixed_string<Size>;
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
 struct parse_error : fixed_string<100> {};
@@ -44,10 +40,15 @@ struct parse_error : fixed_string<100> {};
 // Шаблонный класс для хранения результатов парсинга
 
 template <typename... Ts>
-struct scan_result {
+class scan_result {
     std::tuple<Ts...> v;
 
-    std::tuple<Ts...> values() {
+public:
+    constexpr scan_result(std::tuple<Ts...> _v) 
+    : v(_v)
+    {}
+
+    constexpr const std::tuple<Ts...>& values() {
         return v;
     }
 };
