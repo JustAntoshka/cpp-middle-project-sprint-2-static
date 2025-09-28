@@ -98,13 +98,10 @@ public:
     static constexpr auto placeholder_positions = get_placeholder_positions();
 };
     
-} // namespace stdx::details
-
-
 // Пользовательский литерал
-// TODO: move to stdx::details
-// TODO: write this for format_string
-template<stdx::details::fixed_string S>
+template<fixed_string Str>
 constexpr auto operator""_fs() {
-    return S.data;
+    return format_string<Str>{};
 }
+
+} // namespace stdx::details
