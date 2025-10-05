@@ -1,14 +1,115 @@
 #pragma once
 
-#include <charconv>
-#include <concepts>
 #include <cstdint>
-#include <optional>
 #include <string_view>
-#include <system_error>
+#include <cstring>
+#include <type_traits>
+#include <concepts>
 
 #include "format_string.hpp"
 #include "types.hpp"
+
+
+namespace utils {
+    template<typename T>
+    constexpr const char* MAX_NUM_AS_STR;
+
+    template<typename T>
+    constexpr const char* MIN_NUM_AS_STR;
+
+    template<> constexpr const char MIN_NUM_AS_STR<int8_t>[] = "-128";
+    template<> constexpr const char MAX_NUM_AS_STR<int8_t>[] = "127";
+
+    template<> constexpr const char MIN_NUM_AS_STR<uint8_t>[] = "0";
+    template<> constexpr const char MAX_NUM_AS_STR<uint8_t>[] = "255";
+
+    template<> constexpr const char MIN_NUM_AS_STR<int16_t>[] = "-32768";
+    template<> constexpr const char MAX_NUM_AS_STR<int16_t>[] = "32767";
+
+    template<> constexpr const char MIN_NUM_AS_STR<uint16_t>[] = "0";
+    template<> constexpr const char MAX_NUM_AS_STR<uint16_t>[] = "65535";
+
+    template<> constexpr const char MIN_NUM_AS_STR<int32_t>[] = "-2147483648";
+    template<> constexpr const char MAX_NUM_AS_STR<int32_t>[] = "2147483647";
+
+    template<> constexpr const char MIN_NUM_AS_STR<uint32_t>[] = "0";
+    template<> constexpr const char MAX_NUM_AS_STR<uint32_t>[] = "4294967295";
+
+    template<> constexpr const char MIN_NUM_AS_STR<int64_t>[] = "-9223372036854775808";
+    template<> constexpr const char MAX_NUM_AS_STR<int64_t>[] = "9223372036854775807";
+
+    template<> constexpr const char MIN_NUM_AS_STR<uint64_t>[] = "0";
+    template<> constexpr const char MAX_NUM_AS_STR<uint64_t>[] = "18446744073709551615";
+
+    consteval const char* trim_zeros(const char *str) {
+        while(*str == '0') str++;
+        return *str ? str : str - 1;
+    }
+
+    consteval bool is_digit(char c) {
+        return '0' <= c && c <= '9';
+    }
+
+    consteval bool is_negative(const char* str) {
+        return str[0] == '-';
+    }
+
+    consteval bool is_positive_number(const char *str) {
+        if(!*str) return false;
+        while(*str && is_digit(*str)) ++str;
+        return !*str;
+    }
+
+    consteval bool is_number(const char *str) {
+        return is_negative(str) ? is_positive_number(str + 1) : is_positive_number(str);
+    }
+
+    consteval bool greater_or_eq_abs(const char *str1, const char *str2) {
+        auto trimmed_str1 = trim_zeros(str1);
+        auto trimmed_str2 = trim_zeros(str2);
+
+        const size_t LEN_1 = std::strlen(trimmed_str1);
+        const size_t LEN_2 = std::strlen(trimmed_str2);
+
+        if(LEN_1 != LEN_2) {
+            return LEN_1 > LEN_2;
+        }
+
+        while(*trimmed_str1 && *trimmed_str1 == *trimmed_str2) {
+            ++trimmed_str1;
+            ++trimmed_str2;
+        }
+        return *trimmed_str1 >= *trimmed_str2;
+    }
+
+    template<size_t N1, size_t N2>
+    consteval bool greater_or_eq(const char (&str1)[N1], const char (&str2)[N2]) {
+        if (is_negative(str1) && is_negative(str2)) {
+            return greater_or_eq_abs(str2 + 1, str1 + 1);
+        }
+        if (!is_negative(str1) && !is_negative(str2)) {
+            return greater_or_eq_abs(str1, str2);
+        }
+        return is_negative(str2);
+    }
+
+    template<typename T, size_t N>
+    consteval bool is_in_range(const char (&str)[N]) {
+        return greater_or_eq(str, MIN_NUM_AS_STR<T>) && greater_or_eq(MAX_NUM_AS_STR<T>, str);
+    }
+
+    template <typename T, stdx::details::fixed_string src>
+    consteval T parse_number() {
+        constexpr bool is_neg = is_negative(src.data);
+        const char* str = is_neg ? src.data + 1 : src.data;
+        T result = is_neg ? ('0' - *str) : (*str - '0');
+        while(*++str) {
+            result *= 10;
+            result += is_neg ? ('0' - *str) : (*str - '0');
+        }
+        return result;
+    }
+} // namespace utils
 
 namespace stdx::details {
 
@@ -65,43 +166,58 @@ consteval auto get_current_source_for_parsing() {
     return std::pair{src_start, src_end};
 }
 
-consteval bool is_digit(char c) {
-    return '0' <= c && c <= '9';
+
+
+template<typename T, fixed_string src>
+requires std::is_signed_v<T>
+consteval T parse_value_impl() {
+    return utils::parse_number<T, src>();
 }
 
-template <fixed_string Src>
-consteval bool is_number() {
-    static_assert(Src.size() > 1, "Invalid number format");
-
-    constexpr char begin = Src.data[0];
-    constexpr char end = Src.data[Src.size() - 1];
-    if constexpr (begin == '+' || begin == '-') {
-        return is_number<{Src.data + 1, Src.data + Src.size() - 2}>();
-    }
-    
-    for(size_t i = 0; i < Src.size(); ++i) {
-        if constexpr (!is_digit(Src.data[i])) {
-            return false;
-        }
-    }
-    return true;
+template<typename T, fixed_string src>
+requires std::is_unsigned_v<T>
+consteval T parse_value_impl() {
+    static_assert(!utils::is_negative(src.data), "Unable to parse a negative number string into an unsigned type");
+    return utils::parse_number<T, src>();
 }
+
+template<typename T, fixed_string src>
+requires std::is_same_v<T, std::string_view>
+consteval T parse_value_impl() {
+    return src.data;
+}
+
+
+
+template<size_t Size>
+constexpr bool operator==(const fixed_string<Size>& lhs, const fixed_string<Size>& rhs) {
+    return !std::strcmp(lhs.data, rhs.data);
+}
+
+
 
 // Семейство функций parse_value
-template <typename T>
-consteval T parse_value(auto const& src, auto const& spec) {
+template <typename T, fixed_string spec, fixed_string src>
+requires (spec == fixed_string("%d"))
+consteval T parse_value() {
+    static_assert(utils::is_number(src.data), "Source string is not a valid number");
+    static_assert(utils::is_in_range<T>(src.data), "Number is out of given type range");
+    return parse_value_impl<T, src>();
+}
 
-    static_assert(spec.size() > 0, "Empty format specifier is not allowed");
-    static_assert(spec.size() == 3, "Incorrect format specifier");
-    // static_assert(spec.data[0] == '%', "Incorrect format specifier");
-    // static_assert(spec.data[1] == 'd'
-    //            || spec.data[1] == 'u'
-    //            || spec.data[1] == 's', "Incorrect format specifier");
+template <typename T, fixed_string spec, fixed_string src>
+requires (spec == fixed_string("%u"))
+consteval T parse_value() {
+    static_assert(utils::is_positive_number(src.data), "Source string is not a valid number");
+    static_assert(utils::is_in_range<T>(src.data), "Number is out of given type range");
+    static_assert(std::is_unsigned_v<T>, "Incorrect type provided");
+    return parse_value_impl<T, src>();
+}
 
-    if (spec.data[1] == 'd') {
-        return 42;
-    }
-    return 0;
+template <typename T, fixed_string spec, fixed_string src>
+requires (spec == fixed_string("%s"))
+consteval T parse_value() {
+    return parse_value_impl<T, src>();
 }
 
 // Шаблонная функция, выполняющая преобразования исходных данных в конкретный тип на основе I-го плейсхолдера
@@ -116,7 +232,10 @@ consteval T parse_input() {
     constexpr fixed_string<src_end - src_start + 1> src(source.data + src_start, source.data + src_end);
     constexpr fixed_string<spec_end - spec_start + 1> spec(fmt.fmt.data + spec_start, fmt.fmt.data + spec_end);
 
-    return parse_value<T>(src, spec);
+    static_assert(spec.size() > 0, "Empty format specifier is not allowed");
+    static_assert(spec.size() == 3, "Incorrect format specifier");
+
+    return parse_value<T, spec, src>();
 }
 
 } // namespace stdx::details
