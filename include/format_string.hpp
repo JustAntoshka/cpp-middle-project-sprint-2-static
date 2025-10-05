@@ -1,7 +1,7 @@
 #pragma once
 
 #include <expected>
-
+#include <array>
 #include "types.hpp"
 
 namespace stdx::details {
