@@ -35,7 +35,8 @@ struct fixed_string {
 };
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
-struct parse_error : fixed_string<100> {};
+constexpr size_t PARSE_ERROR_MAX_LEN = 100;
+struct parse_error : fixed_string<PARSE_ERROR_MAX_LEN> {};
 
 // Шаблонный класс для хранения результатов парсинга
 
@@ -45,7 +46,7 @@ class scan_result {
 
 public:
     constexpr scan_result(std::tuple<Ts...> _v) 
-    : v(_v)
+    : v(std::move(_v))
     {}
 
     constexpr const std::tuple<Ts...>& values() {

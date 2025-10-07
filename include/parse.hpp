@@ -95,14 +95,14 @@ namespace utils {
 
     template<typename T, size_t N>
     consteval bool is_in_range(const char (&str)[N]) {
-        return greater_or_eq(str, MIN_NUM_AS_STR<T>) && greater_or_eq(MAX_NUM_AS_STR<T>, str);
+        return greater_or_eq(str, MIN_NUM_AS_STR<std::remove_cv_t<T>>) && greater_or_eq(MAX_NUM_AS_STR<std::remove_cv_t<T>>, str);
     }
 
     template <typename T, stdx::details::fixed_string src>
     consteval T parse_number() {
         constexpr bool is_neg = is_negative(src.data);
         const char* str = is_neg ? src.data + 1 : src.data;
-        T result = is_neg ? ('0' - *str) : (*str - '0');
+        std::remove_cv_t<T> result = is_neg ? ('0' - *str) : (*str - '0');
         while(*++str) {
             result *= 10;
             result += is_neg ? ('0' - *str) : (*str - '0');
@@ -168,21 +168,19 @@ consteval auto get_current_source_for_parsing() {
 
 
 
-template<typename T, fixed_string src>
-requires std::is_signed_v<T>
+template<std::signed_integral T, fixed_string src>
 consteval T parse_value_impl() {
     return utils::parse_number<T, src>();
 }
 
-template<typename T, fixed_string src>
-requires std::is_unsigned_v<T>
+template<std::unsigned_integral T, fixed_string src>
 consteval T parse_value_impl() {
     static_assert(!utils::is_negative(src.data), "Unable to parse a negative number string into an unsigned type");
     return utils::parse_number<T, src>();
 }
 
 template<typename T, fixed_string src>
-requires std::is_same_v<T, std::string_view>
+requires std::is_same_v<std::remove_cv_t<T>, std::remove_cv_t<std::string_view>>
 consteval T parse_value_impl() {
     return src.data;
 }

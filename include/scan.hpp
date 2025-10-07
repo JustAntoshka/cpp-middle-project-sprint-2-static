@@ -18,6 +18,7 @@ namespace stdx {
     // Главная функция
     template <details::format_string fmt, details::fixed_string source, typename... Ts>
     consteval details::scan_result<Ts...> scan() {
+        static_assert(fmt.number_placeholders == sizeof...(Ts), "Incorrect placeholders number");
         return details::scan_result<Ts...>(scan_impl<fmt, source, Ts...>(std::index_sequence_for<Ts...>{}));
     }
     

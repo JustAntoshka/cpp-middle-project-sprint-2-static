@@ -218,11 +218,33 @@ consteval void test_placeholder_combinations() {
 }
 }
 
+consteval void test_const() {
+{
+    using T = std::string_view;
+    using CT = const T;
+    static_assert(stdx::scan<"{%s}"_fs, "Hello world", T>().values() == std::tuple<T>{"Hello world"});
+    static_assert(stdx::scan<"{%s}"_fs, "Hello world", CT>().values() == std::tuple<CT>{"Hello world"});
+}
+{
+    using T = uint32_t;
+    using CT = const T;
+    static_assert(stdx::scan<"{%u}"_fs, "3141592654", T>().values() == std::tuple<T>{3141592654});
+    static_assert(stdx::scan<"{%u}"_fs, "3141592654", CT>().values() == std::tuple<CT>{3141592654});
+}
+{
+    using T = int32_t;
+    using CT = const T;
+    static_assert(stdx::scan<"{%d}"_fs, "-314159265", T>().values() == std::tuple<T>{-314159265});
+    static_assert(stdx::scan<"{%d}"_fs, "-314159265", CT>().values() == std::tuple<CT>{-314159265});
+}
+}
+
 int main() {
     test_limits();
     test_leading_zeros();
     test_empty_args();
     test_placeholder_positions();
     test_placeholder_combinations();
+    test_const();
     return 0;
 }
