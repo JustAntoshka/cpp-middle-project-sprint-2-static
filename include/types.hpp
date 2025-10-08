@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <algorithm>
+#include <stdexcept>
 #include <tuple>
 
 namespace stdx::details {
@@ -21,8 +22,10 @@ struct fixed_string {
         data[Size2] = '\0';
     }
     
-    template<typename Ptr>
-    constexpr fixed_string(Ptr begin, Ptr end) {
+    constexpr fixed_string(const char* begin, const char* end) {
+        if(end - begin > Size) {
+            throw std::runtime_error("Incorrect pointer order");
+        }
         std::copy(begin, end, data);
         data[end - begin] = '\0';
     }
