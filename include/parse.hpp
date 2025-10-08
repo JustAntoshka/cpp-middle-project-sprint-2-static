@@ -101,7 +101,7 @@ consteval T parse_value_impl() {
 }
 
 template<typename T, fixed_string src>
-requires std::is_same_v<std::remove_cv_t<T>, std::remove_cv_t<std::string_view>>
+requires (std::is_same_v<std::remove_cv_t<T>, std::remove_cv_t<std::string_view>>)
 consteval T parse_value_impl() {
     return src.data;
 }
@@ -117,20 +117,26 @@ constexpr bool operator==(const fixed_string<Size>& lhs, const fixed_string<Size
 
 // Семейство функций parse_value
 template <typename T, fixed_string spec, fixed_string src>
-requires (spec == fixed_string("%d"))
+requires (spec == fixed_string("%d") && std::is_integral_v<T>)
 consteval T parse_value() {
     return parse_value_impl<T, src>();
 }
 
 template <typename T, fixed_string spec, fixed_string src>
-requires (spec == fixed_string("%u"))
+requires (spec == fixed_string("%u") && std::is_integral_v<T>)
 consteval T parse_value() {
     static_assert(std::is_unsigned_v<T>, "Incorrect type provided");
     return parse_value_impl<T, src>();
 }
 
 template <typename T, fixed_string spec, fixed_string src>
-requires (spec == fixed_string("%s"))
+requires (spec == fixed_string("%s") && std::is_same_v<std::remove_cv_t<T>, std::remove_cv_t<std::string_view>>)
+consteval T parse_value() {
+    return parse_value_impl<T, src>();
+}
+
+template <typename T, fixed_string spec, fixed_string src>
+requires (spec == fixed_string(""))
 consteval T parse_value() {
     return parse_value_impl<T, src>();
 }
@@ -146,9 +152,6 @@ consteval T parse_input() {
 
     constexpr fixed_string<src_end - src_start + 1> src(source.data + src_start, source.data + src_end);
     constexpr fixed_string<spec_end - spec_start + 1> spec(fmt.fmt.data + spec_start, fmt.fmt.data + spec_end);
-
-    static_assert(spec.size() > 0, "Empty format specifier is not allowed");
-    static_assert(spec.size() == 3, "Incorrect format specifier");
 
     return parse_value<T, spec, src>();
 }

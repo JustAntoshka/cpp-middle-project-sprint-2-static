@@ -220,22 +220,45 @@ consteval void test_placeholder_combinations() {
 
 consteval void test_const() {
 {
-    using T = std::string_view;
-    using CT = const T;
-    static_assert(stdx::scan<"{%s}"_fs, "Hello world", T>().values() == std::tuple<T>{"Hello world"});
-    static_assert(stdx::scan<"{%s}"_fs, "Hello world", CT>().values() == std::tuple<CT>{"Hello world"});
+    static_assert(stdx::scan<"{%s}"_fs, "Hello world", const std::string_view>().values() == std::tuple<const std::string_view>{"Hello world"});
+
+    static_assert(stdx::scan<"{%u}"_fs, "31", const uint8_t>().values() == std::tuple<const uint8_t>{31});
+    static_assert(stdx::scan<"{%u}"_fs, "3141", const uint16_t>().values() == std::tuple<const uint16_t>{3141});
+    static_assert(stdx::scan<"{%u}"_fs, "3141592654", const uint32_t>().values() == std::tuple<const uint32_t>{3141592654});
+    static_assert(stdx::scan<"{%u}"_fs, "3141592654", const uint64_t>().values() == std::tuple<const uint64_t>{3141592654});
+
+    static_assert(stdx::scan<"{%d}"_fs, "-31", const int8_t>().values() == std::tuple<const int8_t>{-31});
+    static_assert(stdx::scan<"{%d}"_fs, "-3141", const int16_t>().values() == std::tuple<const int16_t>{-3141});
+    static_assert(stdx::scan<"{%d}"_fs, "-314159265", const int32_t>().values() == std::tuple<const int32_t>{-314159265});
+    static_assert(stdx::scan<"{%d}"_fs, "-314159265", const int64_t>().values() == std::tuple<const int64_t>{-314159265});
 }
-{
-    using T = uint32_t;
-    using CT = const T;
-    static_assert(stdx::scan<"{%u}"_fs, "3141592654", T>().values() == std::tuple<T>{3141592654});
-    static_assert(stdx::scan<"{%u}"_fs, "3141592654", CT>().values() == std::tuple<CT>{3141592654});
 }
+
+consteval void test_empty_placeholder() {
 {
-    using T = int32_t;
-    using CT = const T;
-    static_assert(stdx::scan<"{%d}"_fs, "-314159265", T>().values() == std::tuple<T>{-314159265});
-    static_assert(stdx::scan<"{%d}"_fs, "-314159265", CT>().values() == std::tuple<CT>{-314159265});
+    static_assert(stdx::scan<"{}"_fs, "123", int8_t>().values() == std::tuple<int8_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", int16_t>().values() == std::tuple<int16_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", int32_t>().values() == std::tuple<int32_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", int64_t>().values() == std::tuple<int64_t>{123});
+
+    static_assert(stdx::scan<"{}"_fs, "123", uint8_t>().values() == std::tuple<uint8_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", uint16_t>().values() == std::tuple<uint16_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", uint32_t>().values() == std::tuple<uint32_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", uint64_t>().values() == std::tuple<uint64_t>{123});
+
+    static_assert(stdx::scan<"{}"_fs, "123", std::string_view>().values() == std::tuple<std::string_view>{"123"});
+
+    static_assert(stdx::scan<"{}"_fs, "123", const int8_t>().values() == std::tuple<const int8_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const int16_t>().values() == std::tuple<const int16_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const int32_t>().values() == std::tuple<const int32_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const int64_t>().values() == std::tuple<const int64_t>{123});
+
+    static_assert(stdx::scan<"{}"_fs, "123", const uint8_t>().values() == std::tuple<const uint8_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const uint16_t>().values() == std::tuple<const uint16_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const uint32_t>().values() == std::tuple<const uint32_t>{123});
+    static_assert(stdx::scan<"{}"_fs, "123", const uint64_t>().values() == std::tuple<const uint64_t>{123});
+
+    static_assert(stdx::scan<"{}"_fs, "123", const std::string_view>().values() == std::tuple<const std::string_view>{"123"});
 }
 }
 
@@ -246,5 +269,6 @@ int main() {
     test_placeholder_positions();
     test_placeholder_combinations();
     test_const();
+    test_empty_placeholder();
     return 0;
 }
