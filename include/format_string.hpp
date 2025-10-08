@@ -1,32 +1,40 @@
 #pragma once
 
 #include <expected>
-
+#include <array>
 #include "types.hpp"
 
 namespace stdx::details {
 
 // Шаблонный класс для хранения форматирующей строчки и ее особенностей
-// ваш код здесь
+template <auto str>
 class format_string {
-    // ваш код здесь
+public:
+    static constexpr auto fmt = str;
+
+    // Функция для получения количества плейсхолдеров и проверки корректности формирующей строки
+    static consteval std::expected<size_t, parse_error> get_number_placeholders();
+
+    static constexpr auto opt_number_placeholders = get_number_placeholders();
+    static_assert(opt_number_placeholders.has_value(), std::string_view(opt_number_placeholders.error().data));
+    static constexpr auto number_placeholders = opt_number_placeholders.value();
+
+    // Функция для получения позиций плейсхолдеров
+    template <size_t NPos = number_placeholders>
+    static consteval auto get_placeholder_positions();
+
+    static constexpr auto placeholder_positions = get_placeholder_positions();
 };
 
 // Пользовательский литерал
-/*
-ваш код здесь
-ваш код здесь operator"" _fs()  сигнатуру также поменяйте
-{
-ваш код здесь
+template<fixed_string Str>
+constexpr auto operator""_fs() {
+    return format_string<Str>{};
 }
-*/
 
-// Функция для получения количества плейсхолдеров и проверки корректности формирующей строки
-// Функция закомментирована, так как еще не реализованы классы, которые она использует
-/*
-// Сделайте эту свободную функцию методом класса format_string
-template<fixed_string str>
-consteval std::expected<size_t, parse_error> get_number_placeholders() {
+
+template <auto str>
+consteval std::expected<size_t, parse_error> format_string<str>::get_number_placeholders() {
     constexpr size_t N = str.size();
     if (!N)
         return 0;
@@ -81,16 +89,25 @@ consteval std::expected<size_t, parse_error> get_number_placeholders() {
         }
         ++pos;
     }
-
+    
     return placeholder_count;
 }
-*/
 
-// Функция для получения позиций плейсхолдеров
+template <auto str>
+template <size_t NPos>
+consteval auto format_string<str>::get_placeholder_positions() {
+    std::array<std::pair<size_t, size_t>, NPos> positions{};
 
-// ваш код здесь
-void get_placeholder_positions() {  // сигнатуру тоже нужно изменить
-    // ваш код здесь
+    auto pos = 0;
+    for(auto i = 0; i < str.size(); ++i) {
+        if(str.data[i] == '{') {
+            positions[pos].first = i;
+        }
+        if(str.data[i] == '}') {
+            positions[pos++].second = i;
+        }
+    }
+    return positions;
 }
 
 } // namespace stdx::details
